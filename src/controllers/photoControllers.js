@@ -1,49 +1,30 @@
 const express = require('express');
+const {check, param, validationResult} = require('express-validator');
 const Photo = require('../models/Photo')
 const mongoose = require('mongoose');
 
 create = (req, res) => {
-    if (!req.body) {
-        return res.status(400).send({
-            message: "Content can not be empty"
-        });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({errors: errors.array()});
     }
 
-    new Photo({
+    Photo.create({
         url: req.body.url,
         width: req.body.width,
         height: req.body.height
-    }).save().then(
-        data => {
-            res.send(data);
-        }
-    ).catch(
-        err => {
-            res.status(500).send({message: err.message});
-        }
-    );
+    }).then(photo => res.json(photo))
 }
 
 findAll = (req, res) => {
     Photo.find().sort('-updatedAt')
-        .then(
-            photos => {
-                res.send(photos);
-            }
-        ).catch(
-        err => {
-            res.status(500).send({
-                    message: err.message
-                }
-            );
-        });
+        .then(photos => res.send(photos))
 };
 
 findOne = async (req, res) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(404).send({
-            message: "Photo not found with id " + req.params.id
-        });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({errors: errors.array()});
     }
 
     const photo = await Photo.findById(req.params.id)
@@ -51,13 +32,19 @@ findOne = async (req, res) => {
         return res.send(photo);
     } else {
         return res.status(404).send({
-            message: "Photo not found with id " + req.params.id
+            message: 'Photo not found with id ' + req.params.id
         });
     }
 };
 
 module.exports = express.Router()
-    .post('/', create)
+    .post('/', [
+        check('url').isURL(),
+        check('width').isInt(),
+        check('height').isInt()
+    ], create)
     .get('/', findAll)
-    .get('/:id', findOne);
+    .get('/:id', [
+        param('id').isMongoId()
+    ], findOne);
 

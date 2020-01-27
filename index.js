@@ -23,7 +23,7 @@ mongoose.connect('mongodb://localhost/photag', {
     useUnifiedTopology: true,
     useCreateIndex: true
 }).then(() => {
-    console.log("Database connected");
+    console.log('Database connected');
 }).catch(err => {
     console.log('Could not connect to the database. Exiting now...', err);
     process.exit();
