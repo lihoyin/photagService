@@ -1,19 +1,33 @@
+const cloudinary = require('cloudinary');
+const Datauri = require('datauri');
 const express = require('express');
 const {check, param, validationResult} = require('express-validator');
+const multer = require('multer')
 const Photo = require('../models/Photo')
-const mongoose = require('mongoose');
+const path = require('path');
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const dataUri = new Datauri();
+
+const storage = multer.memoryStorage();
+const multerUploads = multer({storage}).single('photo');
 
 create = (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(422).json({errors: errors.array()});
+    if (req.file) {
+        const file = dataUri.format(path.extname(req.file.originalname).toString(), req.file.buffer).content;
+        cloudinary.v2.uploader.upload(file).then(result => {
+            Photo.create({
+                url: result.url,
+                width: result.width,
+                height: result.height
+            }).then(photo => res.json(photo))
+        })
     }
-
-    Photo.create({
-        url: req.body.url,
-        width: req.body.width,
-        height: req.body.height
-    }).then(photo => res.json(photo))
 }
 
 findAll = (req, res) => {
@@ -38,11 +52,7 @@ findOne = async (req, res) => {
 };
 
 module.exports = express.Router()
-    .post('/', [
-        check('url').isURL(),
-        check('width').isInt(),
-        check('height').isInt()
-    ], create)
+    .post('/', multerUploads, create)
     .get('/', findAll)
     .get('/:id', [
         param('id').isMongoId()
