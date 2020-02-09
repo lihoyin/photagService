@@ -33,6 +33,7 @@ create = (req, res) => {
 }
 
 findAll = (req, res) => {
+    console.log('req', req.query.tag)
     Photo.find().sort('-updatedAt')
         .then(photos => res.send(photos))
 };
@@ -53,8 +54,30 @@ findOne = async (req, res) => {
     }
 };
 
+addTag = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({errors: errors.array()});
+    }
+
+    Photo.updateOne({
+        _id: req.params.id,
+        'tags.name': { $nin: req.body.tag }
+    }, {
+        $addToSet: {tags: {
+                name: req.body.tag,
+                relativity: 0,
+                reviewerCount: 0
+            }}
+    }).then(result => {
+        res.send(result)
+    })
+}
+
+
 module.exports = express.Router()
     .post('/', [jwtAuthenticate, multerUploads], create)
     .get('/', findAll)
-    .get('/:id', [param('id').isMongoId()], findOne);
+    .get('/:id', [param('id').isMongoId()], findOne)
+    .post('/:id/tags', [param('id').isMongoId()], addTag);
 
