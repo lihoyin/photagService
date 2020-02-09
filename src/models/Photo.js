@@ -4,7 +4,8 @@ const {Schema} = mongoose;
 const PhotoSchema = mongoose.Schema({
     url: String,
     width: Number,
-    height: Number
+    height: Number,
+    createdBy: {type: Schema.Types.ObjectId, ref: 'User'}
 }, {
     timestamps: true
 });

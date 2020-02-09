@@ -5,6 +5,7 @@ const {check, param, validationResult} = require('express-validator');
 const multer = require('multer')
 const Photo = require('../models/Photo')
 const path = require('path');
+const {jwtAuthenticate} = require('../utils/jwtUtils')
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -24,7 +25,8 @@ create = (req, res) => {
             Photo.create({
                 url: result.url,
                 width: result.width,
-                height: result.height
+                height: result.height,
+                createdBy: req.user
             }).then(photo => res.json(photo))
         })
     }
@@ -52,9 +54,7 @@ findOne = async (req, res) => {
 };
 
 module.exports = express.Router()
-    .post('/', multerUploads, create)
+    .post('/', [jwtAuthenticate, multerUploads], create)
     .get('/', findAll)
-    .get('/:id', [
-        param('id').isMongoId()
-    ], findOne);
+    .get('/:id', [param('id').isMongoId()], findOne);
 

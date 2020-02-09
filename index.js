@@ -1,11 +1,11 @@
 require('dotenv').config()
-var express = require('express');
+const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
 
-var app = express();
+const app = express();
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(bodyParser.json());
@@ -13,6 +13,7 @@ app.use(helmet());
 app.use(cors());
 
 app.use('/photos', require('./src/controllers/photoControllers'))
+app.use('/auth', require('./src/controllers/authController'))
 
 app.listen(3000, function () {
     console.log('Photag Service started!');
