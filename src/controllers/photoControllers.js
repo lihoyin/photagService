@@ -35,7 +35,9 @@ create = (req, res) => {
 
 findAll = (req, res) => {
     console.log('req', req.query.tag)
-    Photo.find().sort('-updatedAt')
+    const {tag} = req.query
+
+    Photo.find(tag ? {'tags.name': {'$in': tag}} : {}).sort('-updatedAt')
         .then(photos => res.send(photos))
 };
 

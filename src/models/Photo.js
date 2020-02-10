@@ -15,9 +15,11 @@ const PhotoSchema = mongoose.Schema({
     width: Number,
     height: Number,
     createdBy: {type: Schema.Types.ObjectId, ref: 'User'},
-    tags: [TagSchema]
+    tags: {type: [TagSchema], index: true}
 }, {
     timestamps: true
 });
+
+PhotoSchema.index({"tags.name": 1}, {unique: true});
 
 module.exports = mongoose.model('Photo', PhotoSchema);
