@@ -6,6 +6,7 @@ const multer = require('multer')
 const Photo = require('../models/Photo')
 const path = require('path');
 const {jwtAuthenticate} = require('../utils/jwtUtils')
+const ObjectId = require('mongodb').ObjectID;
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -62,14 +63,30 @@ addTag = async (req, res) => {
 
     Photo.updateOne({
         _id: req.params.id,
-        'tags.name': { $nin: req.body.tag }
+        'tags.name': {$nin: req.body.tag}
     }, {
-        $addToSet: {tags: {
+        $addToSet: {
+            tags: {
                 name: req.body.tag,
                 relativity: 0,
                 reviewerCount: 0
-            }}
+            }
+        }
     }).then(result => {
+        res.send(result)
+    })
+}
+
+deleteTag = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({errors: errors.array()});
+    }
+
+    Photo.update(
+        {_id: ObjectId(req.params.photoId)},
+        {$pull: {tags: {_id: ObjectId(req.params.tagId)}}}
+    ).then(result => {
         res.send(result)
     })
 }
@@ -79,5 +96,6 @@ module.exports = express.Router()
     .post('/', [jwtAuthenticate, multerUploads], create)
     .get('/', findAll)
     .get('/:id', [param('id').isMongoId()], findOne)
-    .post('/:id/tags', [param('id').isMongoId()], addTag);
+    .post('/:id/tags', [param('id').isMongoId()], addTag)
+    .delete('/:photoId/tags/:tagId', [param('photoId').isMongoId(), param('tagId').isMongoId()], deleteTag);
 
