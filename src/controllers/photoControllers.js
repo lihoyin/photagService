@@ -69,7 +69,8 @@ addTag = async (req, res) => {
             tags: {
                 name: req.body.tag,
                 relativity: 0,
-                reviewerCount: 0
+                reviewerCount: 0,
+                createdBy: req.user
             }
         }
     }).then(result => {
@@ -85,17 +86,20 @@ deleteTag = async (req, res) => {
 
     Photo.update(
         {_id: ObjectId(req.params.photoId)},
-        {$pull: {tags: {_id: ObjectId(req.params.tagId)}}}
+        {$pull: {tags: {_id: ObjectId(req.params.tagId), createdBy: req.user}}}
     ).then(result => {
         res.send(result)
     })
 }
 
-
 module.exports = express.Router()
     .post('/', [jwtAuthenticate, multerUploads], create)
     .get('/', findAll)
     .get('/:id', [param('id').isMongoId()], findOne)
-    .post('/:id/tags', [param('id').isMongoId()], addTag)
-    .delete('/:photoId/tags/:tagId', [param('photoId').isMongoId(), param('tagId').isMongoId()], deleteTag);
+    .post('/:id/tags', [jwtAuthenticate, param('id').isMongoId()], addTag)
+    .delete(
+        '/:photoId/tags/:tagId',
+        [jwtAuthenticate, param('photoId').isMongoId(), param('tagId').isMongoId()],
+        deleteTag
+    );
 
